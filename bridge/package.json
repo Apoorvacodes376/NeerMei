@@ -1,0 +1,13 @@
+{
+  "name": "neermei-bridge",
+  "version": "1.0.0",
+  "description": "USB serial bridge — forwards ESP32 sensor readings to the NeerMei backend",
+  "main": "bridge.js",
+  "scripts": {
+    "start": "node bridge.js"
+  },
+  "dependencies": {
+    "@serialport/parser-readline": "^12.0.0",
+    "serialport": "^12.0.0"
+  }
+}

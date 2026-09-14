@@ -1,0 +1,13 @@
+{
+  "name": "neermei-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "neermei": "file:.."
+  }
+}

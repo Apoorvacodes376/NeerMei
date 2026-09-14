@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # NeerMei — Water Quality Monitoring Platform
 
 Real-time IoT water quality monitoring with ML-based purifiability classification, live dashboard, and automated alerts.
@@ -207,3 +208,6 @@ Neer-Mei/
 | GET | `/api/alerts` | JWT | Get alerts (role-scoped) |
 | PATCH | `/api/alerts/:id/acknowledge` | JWT | Acknowledge alert |
 | GET | `/api/public/insights` | — | Aggregate public data |
+=======
+# NeerMei
+>>>>>>> 54cd9e3b8cf9f49ca8e6fc619a7e009a5c3d7a04

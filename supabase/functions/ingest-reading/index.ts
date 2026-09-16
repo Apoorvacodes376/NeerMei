@@ -9,9 +9,20 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ message: 'Method not allowed' }, 405)
 
-  const { deviceId, apiKey, stage, sensorValues } = await request.json()
+  const { deviceId, apiKey, stage, sensorValues, timestamp } = await request.json()
   if (!deviceId || !apiKey || !stage || !sensorValues) {
     return json({ message: 'deviceId, apiKey, stage and sensorValues are required' }, 400)
+  }
+  if (!['pre', 'post'].includes(stage) || typeof sensorValues !== 'object' || Array.isArray(sensorValues)) {
+    return json({ message: 'Invalid stage or sensor values' }, 400)
+  }
+  const sensorNumbers = ['pH', 'turbidity', 'TDS', 'temperature']
+  if (sensorNumbers.some(key => !Number.isFinite(Number(sensorValues[key])))) {
+    return json({ message: 'Sensor values must be numeric' }, 400)
+  }
+  const createdAt = timestamp ? new Date(timestamp) : null
+  if (timestamp && (!createdAt || Number.isNaN(createdAt.getTime()))) {
+    return json({ message: 'Invalid timestamp' }, 400)
   }
 
   const supabase = createClient(
@@ -24,7 +35,7 @@ Deno.serve(async (request) => {
 
   const { data: reading, error } = await supabase
     .from('readings')
-    .insert({ device_id: deviceId, stage, sensor_values: sensorValues, source: 'live' })
+    .insert({ device_id: deviceId, stage, sensor_values: sensorValues, source: 'live', ...(createdAt ? { created_at: createdAt.toISOString() } : {}) })
     .select().single()
   if (error) return json({ message: error.message }, 500)
 

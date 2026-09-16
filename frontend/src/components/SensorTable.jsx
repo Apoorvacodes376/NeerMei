@@ -1,5 +1,5 @@
 
-const COLS = ['timestamp', 'pH', 'turbidity', 'TDS', 'temperature', 'conductivity']
+const COLS = ['timestamp', 'pH', 'turbidity', 'TDS', 'temperature']
 
 export default function SensorTable({ rows = [] }) {
   return (
@@ -18,9 +18,9 @@ export default function SensorTable({ rows = [] }) {
           {rows.length === 0 ? (
             <tr><td colSpan={COLS.length} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>No data available</td></tr>
           ) : rows.map((row, i) => (
-            <tr key={i} style={{ borderTop: '1px solid var(--border)', backgroundColor: i % 2 === 0 ? 'var(--bg-surface)' : 'transparent' }}>
+            <tr key={i} title={row.outOfRange?.length ? `Out of range: ${row.outOfRange.join(', ')}` : undefined} style={{ borderTop: '1px solid var(--border)', backgroundColor: row.outOfRange?.length ? 'rgba(239, 68, 68, 0.1)' : i % 2 === 0 ? 'var(--bg-surface)' : 'transparent' }}>
               {COLS.map(c => (
-                <td key={c} style={{ padding: '0.6rem 1rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+                <td key={c} style={{ padding: '0.6rem 1rem', color: row.outOfRange?.includes(c) ? 'var(--danger)' : 'var(--text-primary)', fontWeight: row.outOfRange?.includes(c) ? 700 : 400, whiteSpace: 'nowrap' }}>
                   {c === 'timestamp' ? new Date(row[c]).toLocaleString() : row[c] ?? '—'}
                 </td>
               ))}

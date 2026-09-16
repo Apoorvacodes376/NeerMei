@@ -6,7 +6,6 @@ struct SensorReading {
   float turbidity;
   float TDS;
   float temperature;
-  float conductivity;
 };
 
 // ── Pin assignments (adjust to your wiring) ───────────────────────────────────
@@ -14,7 +13,6 @@ static const uint8_t PIN_PH          = 34;
 static const uint8_t PIN_TURBIDITY   = 35;
 static const uint8_t PIN_TDS         = 32;
 static const uint8_t PIN_TEMPERATURE = 33;
-static const uint8_t PIN_CONDUCTIVITY= 36;
 
 // ADC full-scale for ESP32 (12-bit)
 static const float ADC_MAX = 4095.0f;
@@ -47,18 +45,11 @@ static inline float readTemperature() {
   return v * 30.0f;   // stub: 0–3.3V → 0–99°C
 }
 
-static inline float readConductivity() {
-  // TODO: replace with actual EC sensor
-  float v = (analogRead(PIN_CONDUCTIVITY) / ADC_MAX) * VREF;
-  return v * 300.0f;  // stub: 0–3.3V → 0–990 µS/cm
-}
-
 inline SensorReading readSensors() {
   return {
     .pH          = readPH(),
     .turbidity   = readTurbidity(),
     .TDS         = readTDS(),
     .temperature = readTemperature(),
-    .conductivity= readConductivity(),
   };
 }

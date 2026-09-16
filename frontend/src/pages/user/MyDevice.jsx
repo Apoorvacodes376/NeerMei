@@ -21,7 +21,7 @@ export default function MyDevice() {
   }, [deviceId])
 
   const handleDownload = () => {
-    const csv = ['timestamp,pH,turbidity,TDS,temperature,conductivity', ...rows.map(r => Object.values(r).join(','))].join('\n')
+    const csv = ['timestamp,pH,turbidity,TDS,temperature', ...rows.map(r => Object.values(r).join(','))].join('\n')
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv])); a.download = 'my-device-data.csv'; a.click()
   }
 

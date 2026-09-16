@@ -25,8 +25,8 @@ const STAGE          = process.env.STAGE          || 'pre'
 const SERIAL_PORT    = process.env.SERIAL_PORT    || 'COM3'
 const BAUD_RATE      = parseInt(process.env.BAUD_RATE || '115200', 10)
 
-// Matches: [READ] pH=7.12 turb=1.23 TDS=310.0 temp=24.5 cond=420.0 ts=2024-01-15T10:30:00Z
-const LINE_RE = /\[READ\]\s+pH=([\d.]+)\s+turb=([\d.]+)\s+TDS=([\d.]+)\s+temp=([\d.]+)\s+cond=([\d.]+)\s+ts=(\S+)/
+// Matches: [READ] pH=7.12 turb=1.23 TDS=310.0 temp=24.5 ts=2024-01-15T10:30:00Z
+const LINE_RE = /\[READ\]\s+pH=([\d.]+)\s+turb=([\d.]+)\s+TDS=([\d.]+)\s+temp=([\d.]+)\s+ts=(\S+)/
 
 async function postReading(sensorValues, timestamp) {
   try {
@@ -52,9 +52,9 @@ port.on('error', err => { console.error('[Bridge] Serial error:', err.message); 
 parser.on('data', line => {
   const m = line.match(LINE_RE)
   if (!m) return
-  const [, pH, turbidity, TDS, temperature, conductivity, timestamp] = m
+  const [, pH, turbidity, TDS, temperature, timestamp] = m
   postReading(
-    { pH: parseFloat(pH), turbidity: parseFloat(turbidity), TDS: parseFloat(TDS), temperature: parseFloat(temperature), conductivity: parseFloat(conductivity) },
+    { pH: parseFloat(pH), turbidity: parseFloat(turbidity), TDS: parseFloat(TDS), temperature: parseFloat(temperature) },
     timestamp
   )
 })

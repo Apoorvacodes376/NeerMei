@@ -25,6 +25,7 @@ static void getISO8601(char* out, size_t len) {
 }
 
 static bool postReading(const SensorReading& r, const char* ts) {
+  if (!ENABLE_WIFI_INGEST) return false;
   if (WiFi.status() != WL_CONNECTED) return false;
 
   WiFiClientSecure client;
@@ -46,7 +47,6 @@ static bool postReading(const SensorReading& r, const char* ts) {
   sv["turbidity"]   = serialized(String(r.turbidity, 2));
   sv["TDS"]         = serialized(String(r.TDS, 1));
   sv["temperature"] = serialized(String(r.temperature, 1));
-  sv["conductivity"]= serialized(String(r.conductivity, 1));
 
   String body;
   serializeJson(doc, body);
@@ -58,6 +58,10 @@ static bool postReading(const SensorReading& r, const char* ts) {
 
 static void connectWiFi() {
   Serial.printf("[WiFi] Connecting to %s", WIFI_SSID);
+  if (!ENABLE_WIFI_INGEST) {
+    Serial.println("\n[WiFi] Disabled — using USB bridge");
+    return;
+  }
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   uint8_t tries = 0;
   while (WiFi.status() != WL_CONNECTED && tries < 20) {
@@ -82,7 +86,7 @@ void setup() {
 
 void loop() {
   // Reconnect if dropped
-  if (WiFi.status() != WL_CONNECTED) {
+  if (ENABLE_WIFI_INGEST && WiFi.status() != WL_CONNECTED) {
     wifiOk = false;
     connectWiFi();
   }
@@ -101,7 +105,7 @@ void loop() {
 
   // Print to Serial (USB bridge can pick this up)
   Serial.printf("[READ] pH=%.2f turb=%.2f TDS=%.1f temp=%.1f cond=%.1f ts=%s\n",
-    r.pH, r.turbidity, r.TDS, r.temperature, r.conductivity, ts);
+    r.pH, r.turbidity, r.TDS, r.temperature, ts);
 
   // Try to flush buffer first (oldest readings go first)
   while (!bufferEmpty() && wifiOk) {
@@ -115,8 +119,8 @@ void loop() {
   }
 
   // Post current reading
-  postOk = postReading(r, ts);
-  if (!postOk) {
+  postOk = !ENABLE_WIFI_INGEST || postReading(r, ts);
+  if (ENABLE_WIFI_INGEST && !postOk) {
     Serial.printf("[BUFFER] Offline — buffering reading (buf=%d)\n", bufferSize() + 1);
     bufferPush(r, ts);
   }

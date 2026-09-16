@@ -49,8 +49,12 @@ export default function Signup() {
   }
 
   const handleGoogle = async () => {
+    sessionStorage.setItem('pending-google-signup', JSON.stringify({ name: form.name.trim(), deviceNumber: form.deviceNumber.trim() }))
     const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${window.location.origin}/auth/callback` } })
-    if (error) setError(error.message)
+    if (error) {
+      sessionStorage.removeItem('pending-google-signup')
+      setError(error.message)
+    }
   }
 
   return (

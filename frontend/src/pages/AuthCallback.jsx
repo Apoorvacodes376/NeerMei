@@ -18,6 +18,19 @@ export default function AuthCallback() {
           return
         }
       }
+      const pendingGoogleSignup = sessionStorage.getItem('pending-google-signup')
+      if (pendingGoogleSignup) {
+        sessionStorage.removeItem('pending-google-signup')
+        const { deviceNumber } = JSON.parse(pendingGoogleSignup)
+        if (deviceNumber) {
+          const { error } = await supabase.from('devices').insert({ id: deviceNumber, owner_id: session.user.id, api_key: 'placeholder' })
+          if (error) {
+            if (error.code !== '23505') throw error
+            const { data: existingDevice } = await supabase.from('devices').select('id').eq('id', deviceNumber).maybeSingle()
+            if (!existingDevice) throw new Error('Device is already associated with another account')
+          }
+        }
+      }
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single()
       navigate(profile?.role === 'admin' ? '/monitoring/pre' : '/device', { replace: true })
     })

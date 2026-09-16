@@ -5,10 +5,10 @@ import AlertPopup from './AlertPopup.jsx'
 
 const adminNav = [
   { to: '/monitoring/pre', label: 'Live Monitoring 1', icon: Activity },
-  { to: '/ml/pre', label: 'ML Training 1', icon: Brain },
+  { to: '/ml/pre', label: 'Pre-Purification Prediction', icon: Brain },
   { to: '/purification', label: 'Purification Analysis', icon: FlaskConical },
   { to: '/monitoring/post', label: 'Post-Purification Data', icon: Activity },
-  { to: '/ml/post', label: 'ML Training 2', icon: Brain },
+  { to: '/ml/post', label: 'Post-Purification Prediction', icon: Brain },
   { to: '/outcome', label: 'Outcome', icon: CheckCircle },
   { to: '/alerts-admin', label: 'Alerts & History', icon: Bell },
   { to: '/admin-settings', label: 'Admin Settings', icon: Settings },

@@ -22,7 +22,7 @@ export default function Landing() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginTop: '5rem', width: '100%', maxWidth: '900px' }}>
           {[
             { icon: Cpu, title: 'IoT Sensors', desc: 'Real-time pH, turbidity, TDS and more from connected devices.' },
-            { icon: BarChart2, title: 'ML Analysis', desc: 'Predictive models classify water purifiability and potability.' },
+            { icon: BarChart2, title: 'Threshold Analysis', desc: 'Clear threshold checks classify water purifiability and safety.' },
             { icon: ShieldCheck, title: 'Safety Alerts', desc: 'Instant notifications when readings cross unsafe thresholds.' },
           ].map(({ icon: Icon, title, desc }) => (
             <div key={title} style={{ backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '1.5rem', textAlign: 'left' }}>

@@ -5,19 +5,15 @@ export async function parseTrainingDataset(file) {
   const rows = isJson ? (Array.isArray(parsed) ? parsed : parsed.data) : parsed.rows
   const headers = isJson ? Object.keys(rows?.[0] || {}) : parsed.headers
   if (!rows?.length) throw new Error('Dataset is empty')
-  if (headers.length < 2) throw new Error('Dataset needs input columns and a target column')
-
-  const targetColumn = headers[headers.length - 1]
-  const featureColumns = headers.slice(0, -1)
+  const featureColumns = ['pH', 'turbidity', 'TDS', 'temperature']
+  if (featureColumns.some(column => !headers.includes(column))) throw new Error('Dataset must contain pH, turbidity, TDS, and temperature columns')
   return rows.map(row => {
     const timestamp = row.timestamp || row.time || row.created_at || new Date().toISOString()
     const sensorValues = Object.fromEntries(featureColumns.map(column => [column, toValue(row[column])]))
     if (Object.values(sensorValues).some(value => value === null)) {
       throw new Error('Input columns must contain numeric values or parseable timestamps')
     }
-    const label = Number(row[targetColumn])
-    if (!Number.isInteger(label)) throw new Error(`Target column "${targetColumn}" must contain integer class labels`)
-    return { timestamp, sensorValues, label, targetColumn }
+    return { timestamp, sensorValues }
   })
 }
 
@@ -25,7 +21,7 @@ export function toReadingRows(records, stage, deviceId = 'DEV-001') {
   return records.map(record => ({
     device_id: deviceId,
     stage,
-    sensor_values: { ...record.sensorValues, label: record.label },
+    sensor_values: record.sensorValues,
     source: 'sample_upload',
     created_at: record.timestamp,
   }))

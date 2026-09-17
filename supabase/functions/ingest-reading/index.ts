@@ -9,20 +9,16 @@ Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (request.method !== 'POST') return json({ message: 'Method not allowed' }, 405)
 
-  const { deviceId, apiKey, stage, sensorValues, timestamp } = await request.json()
+  const { deviceId, apiKey, stage, sensorValues } = await request.json()
   if (!deviceId || !apiKey || !stage || !sensorValues) {
     return json({ message: 'deviceId, apiKey, stage and sensorValues are required' }, 400)
   }
   if (!['pre', 'post'].includes(stage) || typeof sensorValues !== 'object' || Array.isArray(sensorValues)) {
     return json({ message: 'Invalid stage or sensor values' }, 400)
   }
-  const sensorNumbers = ['pH', 'turbidity', 'TDS', 'temperature']
+  const sensorNumbers = ['pH', 'turbidity', 'TDS']
   if (sensorNumbers.some(key => !Number.isFinite(Number(sensorValues[key])))) {
     return json({ message: 'Sensor values must be numeric' }, 400)
-  }
-  const createdAt = timestamp ? new Date(timestamp) : null
-  if (timestamp && (!createdAt || Number.isNaN(createdAt.getTime()))) {
-    return json({ message: 'Invalid timestamp' }, 400)
   }
 
   const supabase = createClient(
@@ -33,26 +29,50 @@ Deno.serve(async (request) => {
     .from('devices').select('id, owner_id').eq('id', deviceId).eq('api_key', apiKey).maybeSingle()
   if (deviceError || !device) return json({ message: 'Invalid device credentials' }, 401)
 
-  const { data: reading, error } = await supabase
-    .from('readings')
-    .insert({ device_id: deviceId, stage, sensor_values: sensorValues, source: 'live', ...(createdAt ? { created_at: createdAt.toISOString() } : {}) })
-    .select().single()
-  if (error) return json({ message: error.message }, 500)
+  const thresholds = stage === 'pre'
+    ? {
+        pH: { min: 6, max: 8.5 },
+        turbidity: { min: 1, max: 5 },
+        TDS: { min: 0, max: 2000 },
+      }
+    : {
+        pH: { min: 6, max: 8.5 },
+        turbidity: { min: 0, max: 1 },
+        TDS: { min: 0, max: 500 },
+      }
 
   const pH = Number(sensorValues.pH)
   const turbidity = Number(sensorValues.turbidity)
   const tds = Number(sensorValues.TDS)
-  const abnormal = pH < 6.5 || pH > 8.5 || turbidity > 4 || tds > 500
-  if (abnormal && device.owner_id) {
-    const details = [
-      pH < 6.5 || pH > 8.5 ? `pH ${pH}` : null,
-      turbidity > 4 ? `turbidity ${turbidity}` : null,
-      tds > 500 ? `TDS ${tds}` : null,
-    ].filter(Boolean).join(', ')
+  const outOfRange = [
+    !Number.isFinite(pH) || pH < thresholds.pH.min || pH > thresholds.pH.max ? 'pH' : null,
+    !Number.isFinite(turbidity) || turbidity < thresholds.turbidity.min || turbidity > thresholds.turbidity.max
+      ? 'turbidity'
+      : null,
+    !Number.isFinite(tds) || tds < thresholds.TDS.min || tds > thresholds.TDS.max ? 'TDS' : null,
+  ].filter((parameter): parameter is string => parameter !== null)
+  const passes = outOfRange.length === 0
+  const result = stage === 'pre'
+    ? (passes ? 'purifiable' : 'not purifiable')
+    : (passes ? 'safe' : 'not safe')
+
+  const { data: reading, error } = await supabase
+    .from('readings')
+    .insert({
+      device_id: deviceId,
+      stage,
+      sensor_values: { ...sensorValues, result, outOfRange },
+      source: 'live',
+    })
+    .select().single()
+  if (error) return json({ message: error.message }, 500)
+
+  if (!passes && device.owner_id) {
+    const details = outOfRange.map((parameter) => `${parameter} ${sensorValues[parameter]}`).join(', ')
     await supabase.from('alerts').insert({
       device_id: deviceId,
       user_id: device.owner_id,
-      message: `Abnormal reading detected: ${details}`,
+      message: `${stage === 'pre' ? 'Non-purifiable' : 'Unsafe'} reading detected: ${details}`,
       severity: 'high',
     })
   }

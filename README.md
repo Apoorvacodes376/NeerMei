@@ -44,29 +44,6 @@ npm run install:all  # installs backend, frontend, bridge deps + pip requirement
 1. Apply `supabase/migrations/20260912000000_initial_schema.sql` in the Supabase SQL editor.
 2. Enable Email and Google under Authentication → Providers.
 3. Deploy `supabase/functions/ingest-reading` for real sensor/bridge readings.
-4. Apply the remaining migrations, including `20260915000000_live_sensor_pipeline.sql`, so `readings` is available through Realtime.
-
-### Provision a device
-
-The bridge and firmware authenticate with a per-device API key. Create or update
-the device row using a server-side SQL editor or another trusted provisioning
-tool; never put a Supabase service-role key in the frontend:
-
-```sql
-insert into public.devices (id, api_key, location)
-values ('Device2', 'replace-with-a-random-device-key', 'Lab')
-on conflict (id) do update
-set api_key = excluded.api_key, location = excluded.location;
-```
-
-Set the same device ID and key in `firmware/src/device_config.h`, or pass them
-as `DEVICE_ID` and `DEVICE_API_KEY` when starting the bridge. The bridge sends
-readings to `ingest-reading`, which authenticates the device server-side and
-writes `readings` with `source = 'live'`.
-
-For USB bridge mode, set `ENABLE_WIFI_INGEST` to `false` before flashing the
-ESP32. This keeps the firmware's serial output active without also sending a
-second copy directly over Wi-Fi.
 
 ## 3. Environment Files
 
@@ -148,7 +125,7 @@ Set `INGEST_FUNCTION_URL` to the deployed `ingest-reading` function. The bridge 
 
 ## 7. End-to-End Test Path
 
-Follow these steps to verify the full loop from data → threshold analysis → frontend → alerts:
+Follow these steps to verify the full loop from data → ML → frontend → alerts:
 
 ### Step 1 — Start services
 ```bash
@@ -158,11 +135,12 @@ npm run dev        # in one terminal
 ### Step 2 — Admin flow
 1. Open http://localhost:5173 → **Login** as an admin Supabase user
 2. Navigate to **Live Monitoring 1** — available pre-purification readings appear in the table and graph
-3. Navigate to **Pre-Purification Prediction** → choose Existing Data or Live Sensor and click **Predict Model**
-4. Navigate to **Purification Analysis** — threshold result and out-of-range parameters appear
+3. Navigate to **ML Training 1** → click **Start Training**, wait 2s, click **Stop Training** — status shows accuracy
+4. Click **Test Model** — Last prediction appears with confidence score
+5. Navigate to **Purification Analysis** — confidence graph live-appends
 6. Navigate to **Post-Purification Data** — post readings visible
-7. Navigate to **Post-Purification Prediction** → click **Predict Model**
-8. Navigate to **Outcome** — current status shows "Safe" / "Not Safe"; bar chart shows threshold results
+7. Navigate to **ML Training 2** → repeat Train/Test cycle for post-purification classifier
+8. Navigate to **Outcome** — current status shows "Purified" / "Not Purified" with confidence; bar chart shows history
 9. Navigate to **Alerts & History** — available alerts are visible; use the filter to narrow by device and click **Acknowledge**
 
 ### Step 3 — User flow
@@ -177,9 +155,12 @@ npm run dev        # in one terminal
 2. Aggregate stats (pH, turbidity, TDS, safety %) and 14-day trend graph visible — no auth required
 3. Confirm no device-level data is exposed
 
-### Step 5 — Upload sample dataset
+### Step 5 — Hardware disconnected indicator
+1. On any Live Monitoring page, the "hardware disconnected" icon appears when the device's `last_seen` value is older than two minutes.
+
+### Step 6 — Upload sample dataset
 1. On **Live Monitoring 1**, click the **Upload** icon
-2. Select a CSV with `timestamp,pH,turbidity,TDS,temperature` columns
+2. Select a CSV with `timestamp,pH,turbidity,TDS,temperature,conductivity` columns
 3. Readings are ingested and appear in the table
 
 ---

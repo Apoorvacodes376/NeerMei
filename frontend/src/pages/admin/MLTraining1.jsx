@@ -1,16 +1,22 @@
+import { useState } from 'react'
 import MLControlPanel from '../../components/MLControlPanel.jsx'
+import TrainingDatasetActions from '../../components/TrainingDatasetActions.jsx'
 
 export default function MLTraining1() {
+  const [mode, setMode] = useState('dummy')
+  const [status, setStatus] = useState('idle')
+
   return (
     <div>
       <div style={headerStyle}>
         <div>
-          <h2 style={pageTitle}>Threshold Prediction — Pre-Purification</h2>
-          <p style={pageSub}>Analyze pH, turbidity, and TDS against the purifiable ranges</p>
+          <h2 style={pageTitle}>ML Training / Testing — Pre-Purification</h2>
+          <p style={pageSub}>Train and test the purifiability classifier on pre-purification sensor data</p>
         </div>
+        <TrainingDatasetActions stage="pre" mode={mode} onModeChange={setMode} onTrainingStarted={() => setStatus('training')} />
       </div>
       <div style={{ marginTop: '1.5rem' }}>
-        <MLControlPanel stage="pre" />
+        <MLControlPanel stage="pre" mode={mode} externalStatus={status} onStatusChange={setStatus} />
       </div>
     </div>
   )

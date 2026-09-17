@@ -20,7 +20,8 @@ begin
   normalized_device_number := nullif(btrim(new.raw_user_meta_data ->> 'device_number'), '');
 
   insert into public.profiles (id, name, device_number)
-  values (new.id, profile_name, normalized_device_number);
+  values (new.id, profile_name, normalized_device_number)
+  on conflict (id) do nothing;
 
   if normalized_device_number is not null then
     insert into public.devices (id, owner_id, api_key)

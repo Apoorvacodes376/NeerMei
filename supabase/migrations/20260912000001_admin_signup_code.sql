@@ -1,7 +1,9 @@
-create table public.app_secrets (
+create table if not exists public.app_secrets (
   key text primary key,
   value text not null
 );
+
+alter table public.app_secrets add column if not exists value text;
 
 insert into public.app_secrets (key, value)
 values ('admin_signup_code', 'admin123')
